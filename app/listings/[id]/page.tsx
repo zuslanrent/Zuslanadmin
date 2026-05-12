@@ -525,68 +525,99 @@ export default function ListingDetailPage() {
                 </div>
               )}
               {/* Зарын багц */}
+              {/* Зарын багц */}
               <div className="card p-5">
                 <p className="label mb-3">Зарын багц</p>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-gray-500">Төрөл</span>
-                    {listing.listing_type === "vip" ? (
-                      <span className="px-2.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-100 rounded-full text-xs font-bold">
-                        ⭐ VIP
-                      </span>
-                    ) : (
-                      <span className="px-2.5 py-0.5 bg-gray-100 text-gray-600 border border-gray-200 rounded-full text-xs font-semibold">
-                        Энгийн
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex justify-between text-xs">
-                    <span className="text-gray-500">Хугацаа</span>
-                    <span className="font-semibold text-gray-700">
-                      {listing.package_days || 7} хоног
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-xs">
-                    <span className="text-gray-500">Төлсөн дүн</span>
-                    <span className="font-bold font-mono text-brand-600">
-                      {(listing.paid_amount || 0).toLocaleString()}₮
-                    </span>
-                  </div>
-                  {listing.expires_at &&
-                    (() => {
-                      const days = Math.ceil(
-                        (new Date(listing.expires_at).getTime() - Date.now()) /
-                          86400000,
-                      );
-                      const expired = days <= 0;
-                      const urgent = days > 0 && days <= 3;
-                      return (
-                        <div
+                {(() => {
+                  const isVip = listing.is_vip || listing.plan === "vip";
+                  const planPrice = listing.plan_price ?? 0;
+                  const isFree = planPrice === 0;
+
+                  // Хугацаа: expires_at - created_at-аас тооцох
+                  let durationLabel = "—";
+                  if (listing.expires_at && listing.created_at) {
+                    const ms =
+                      new Date(listing.expires_at).getTime() -
+                      new Date(listing.created_at).getTime();
+                    const hours = Math.round(ms / 3600000);
+                    if (hours <= 24) durationLabel = `${hours} цаг`;
+                    else durationLabel = `${Math.round(hours / 24)} хоног`;
+                  }
+
+                  // Дуусах огноо тооцоо
+                  let expiryNode = null;
+                  if (listing.expires_at) {
+                    const diff =
+                      new Date(listing.expires_at).getTime() - Date.now();
+                    const hoursLeft = Math.floor(diff / 3600000);
+                    const daysLeft = Math.ceil(diff / 86400000);
+                    const expired = diff <= 0;
+                    const urgent = !expired && daysLeft <= 3;
+
+                    const text = expired
+                      ? "Дууссан"
+                      : hoursLeft < 24
+                        ? `${hoursLeft} цаг үлдсэн`
+                        : `${daysLeft} хоног үлдсэн`;
+
+                    expiryNode = (
+                      <div className="flex justify-between items-center text-xs pt-2 border-t border-gray-100">
+                        <span className="text-gray-500">Дуусах огноо</span>
+                        <span
                           className={clsx(
-                            "flex justify-between items-center text-xs pt-2 border-t border-gray-100",
+                            "font-semibold px-2 py-0.5 rounded-full text-[11px]",
+                            expired
+                              ? "bg-red-50 text-red-600"
+                              : urgent
+                                ? "bg-amber-50 text-amber-700"
+                                : "bg-emerald-50 text-emerald-700",
                           )}
                         >
-                          <span className="text-gray-500">Дуусах огноо</span>
-                          <span
-                            className={clsx(
-                              "font-semibold px-2 py-0.5 rounded-full text-[11px]",
-                              expired
-                                ? "bg-red-50 text-red-600"
-                                : urgent
-                                  ? "bg-amber-50 text-amber-700"
-                                  : "bg-emerald-50 text-emerald-700",
-                            )}
-                          >
-                            {expired
-                              ? "Дууссан"
-                              : urgent
-                                ? `${days} хоног үлдсэн`
-                                : `${days} хоног үлдсэн`}
+                          {text}
+                        </span>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-gray-500">Төрөл</span>
+                        {isVip ? (
+                          <span className="px-2.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-100 rounded-full text-xs font-bold">
+                            ⭐ VIP
                           </span>
-                        </div>
-                      );
-                    })()}
-                </div>
+                        ) : isFree ? (
+                          <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-full text-xs font-bold">
+                            ҮНЭГҮЙ (24 цаг)
+                          </span>
+                        ) : (
+                          <span className="px-2.5 py-0.5 bg-gray-100 text-gray-600 border border-gray-200 rounded-full text-xs font-semibold">
+                            Энгийн
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-500">Хугацаа</span>
+                        <span className="font-semibold text-gray-700">
+                          {durationLabel}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-500">Төлсөн дүн</span>
+                        <span
+                          className={clsx(
+                            "font-bold font-mono",
+                            isFree ? "text-emerald-600" : "text-brand-600",
+                          )}
+                        >
+                          {isFree ? "Үнэгүй" : `${planPrice.toLocaleString()}₮`}
+                        </span>
+                      </div>
+                      {expiryNode}
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Danger zone */}
