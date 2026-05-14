@@ -525,7 +525,6 @@ export default function ListingDetailPage() {
                 </div>
               )}
               {/* Зарын багц */}
-              {/* Зарын багц */}
               <div className="card p-5">
                 <p className="label mb-3">Зарын багц</p>
                 {(() => {
